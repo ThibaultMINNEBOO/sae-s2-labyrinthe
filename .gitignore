@@ -1,0 +1,9 @@
+# IDE's config folders
+.idea/
+.vscode/
+
+# Pycache for python modules
+__pycache__
+
+# Venv python
+venv/
