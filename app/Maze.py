@@ -205,6 +205,39 @@ class Maze:
             laby.remove_wall((height-1, cell_x), (height-1, cell_x+1))
 
         return laby
+    
+    @classmethod
+    def gen_fusion(cls, height: int, width: int):
+        laby = cls(height, width)
+
+        # On labélise toutes les cellules de 1 à n
+        label_cells = {}
+        label = 1
+
+        for cell in laby.neighbors.keys():
+            label_cells[cell] = label
+            label += 1
+
+        # On extrait tous les murs dans une liste et on la mélange aléatoirement
+        walls = laby.get_walls()
+        shuffle(walls)
+
+        # On itère sur les murs mélangés aléatoirement
+        for w in walls:
+            # On vérifie que les deux cellules séparées par le mur n'ont pas le même label
+            if label_cells[w[0]] != label_cells[w[1]]:
+                # On casse le mur présent entre ces deux cellules
+                laby.remove_wall(w[0], w[1])
+            
+                # On récupère la liste des cellules ayant le même label que la deuxième cellule du mur
+                same_labels = [cell for cell in laby.neighbors.keys() if cell != w[0] if label_cells[cell] == label_cells[w[1]]]
+
+                # On ajoute le même label que la première cellules à toutes les cellules ayant le même label que la deuxième cellule incluse.
+                for cell in same_labels:
+                    label_cells[cell] = label_cells[w[0]]
+                
+        return laby
+        
 
     def __str__(self):
         """

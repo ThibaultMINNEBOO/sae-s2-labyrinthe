@@ -17,7 +17,8 @@ print()
 lst_commands = {
     '/help': "Afficher la liste des commandes",
     '/gen_btree <height> <width>': "Générer un labyrinthe par arbre binaire",
-    '/gen_sidewinder': "Générer un labyrinthe avec l'algorithme sidewinder",
+    '/gen_sidewinder <height> <width>': "Générer un labyrinthe avec l'algorithme sidewinder",
+    '/gen_fusion <height> <width>': "Générer un labyrinthe avec l'algorithme des fusions de chemins",
     '/gen_empty_maze <height> <width>': "Générer un labyrinthe vide",
     '/gen_full_maze <height> <width>': "Générer un labyrinthe plein",
     '/get_walls': "Récupère tous les murs du labyrinthe.",
@@ -94,7 +95,18 @@ while True:
                 laby = Maze.gen_sidewinder(int(args[0]), int(args[1]))
                 print(laby)
                 cache = laby
+        elif cmd == '/gen_fusion':
+            if len(args) == 0:
+                print("Veuillez entrer la hauteur et la largeur du labyrinthe")
+            elif len(args) == 1:
+                print("Veuillez entrer la largeur du labyrinthe")
+            else:
+                laby = Maze.gen_fusion(int(args[0]), int(args[1]))
+                print(laby)
+                cache = laby
         elif cmd == "exit":
             exit(0)
+        else:
+            print(f"La commande {cmd} n'existe pas")
     except:
         exit(0)
