@@ -106,18 +106,18 @@ class Maze:
         Arguments:
             - cell (tuple): Représente une cellule (un couple contenant la coordonnée x et la coordonnée y)
         """
-        walls = []
+        cells = []
 
         if cell[0]-1 >= 0:
-            walls.append((cell[0]-1, cell[1]))
+            cells.append((cell[0]-1, cell[1]))
         if cell[0]+1 < self.height:
-            walls.append((cell[0]+1, cell[1]))
+            cells.append((cell[0]+1, cell[1]))
         if cell[1]-1 >= 0:
-            walls.append((cell[0], cell[1]-1))
+            cells.append((cell[0], cell[1]-1))
         if cell[1]+1 < self.width:
-            walls.append((cell[0], cell[1]+1))
+            cells.append((cell[0], cell[1]+1))
 
-        return walls
+        return cells
 
     @classmethod
     def gen_btree(cls, height: int, width: int):
@@ -159,6 +159,9 @@ class Maze:
 
     @classmethod
     def gen_sidewinder(cls, height: int, width: int):
+        """
+        Permet de générer un labyrinthe avec l'algorithme sidewinder
+        """
         laby = cls(height, width)
 
         for i in range(height-1):
@@ -208,6 +211,9 @@ class Maze:
     
     @classmethod
     def gen_fusion(cls, height: int, width: int):
+        """
+        Permet de générer un labyrinthe avec l'algorithme de fusion de chemin.
+        """
         laby = cls(height, width)
 
         # On labélise toutes les cellules de 1 à n
@@ -238,6 +244,199 @@ class Maze:
                 
         return laby
         
+    @classmethod
+    def gen_exploration(cls, height: int, width: int):
+        """
+        Cette méthode de classe permet de générer un labyrinthe parfait en utilisant l'algorithme de l'exploration exhaustive.
+        Elle retourne un objet de type Maze.
+
+        Args:
+            height (int): la hauteur du labyrinthe à créer
+            width (int): la largeur du labyrinthe à créer
+
+        Returns:
+            laby: un objet de type Maze représentant le labyrinthe généré.
+
+        Raises:
+            None
+
+        Exemple d'utilisation :
+            labyrinthe = Maze.gen_exploration(10, 10)
+        """
+        laby = cls(height, width)
+        
+        # On choisit une cellule au hasard dans le labyrinthe
+        cell = choice(list(laby.neighbors.keys()))
+
+        # On marque cette cellule comme étant visitée
+        visite = [cell]
+
+        # On ajoute cette cellule à une pile 
+        pile = [cell]
+
+        while pile:
+            # On dépile la cellule
+            c = pile.pop(0)
+
+            # On regarde les cellules contiguës et qui n'ont pas encore été visitée à la cellule qui vient d'être dépilée
+            no_visited = [cell for cell in laby.get_contiguous_cells(c) if cell not in visite]
+
+            if no_visited:
+                # On remet sur la pile la cellule qui vient d'être dépilée
+                pile.insert(0, c)
+
+                # On choisit au hasard l'une de ses cellules contiguës qui n'a pas été visité
+                cell = choice(no_visited)
+
+                # On casse le mur séparant les deux cellules
+                laby.remove_wall(c, cell)
+
+                # On marque la cellule choisie au hasard comme étant visitée
+                visite.append(cell)
+
+                # On rajoute sur la pile la cellule ayant été choisi
+                pile.insert(0, cell)
+
+        return laby
+
+    @classmethod
+    def gen_wilson(cls, height: int, width: int):
+        """
+        Permet de générer un labyrinthe par l'algorithme de wilson
+        """
+        laby = cls(height, width)
+        cell = choice(list(laby.neighbors.keys()))
+        visited = [cell]
+
+        while len(visited) < len(laby.neighbors.keys()):
+            cell = choice(list(laby.neighbors.keys()))
+            while cell in visited:
+                cell = choice(list(laby.neighbors.keys()))
+            
+            path = [cell]
+
+            while path[-1] not in visited:
+                contigous_cell = choice(laby.get_contiguous_cells(path[-1]))
+
+                if contigous_cell in path:
+                    path = path[:path.index(contigous_cell)+1]
+                else:
+                    path.append(contigous_cell)
+
+            for i in range(len(path)-1):
+                laby.remove_wall(path[i], path[i+1])
+
+            visited += path[:-1]
+
+        return laby
+
+
+    def overlay(self, content=None):
+        """
+        Rendu en mode texte, sur la sortie standard, \
+        d'un labyrinthe avec du contenu dans les cellules
+        Argument:
+            content (dict) : dictionnaire tq content[cell] contient le caractère à afficher au milieu de la cellule
+        Retour:
+            string
+        """
+        if content is None:
+            content = {(i,j):' ' for i in range(self.height) for j in range(self.width)}
+        else:
+            # Python >=3.9
+            #content = content | {(i, j): ' ' for i in range(
+            #    self.height) for j in range(self.width) if (i,j) not in content}
+            # Python <3.9
+            new_content = {(i, j): ' ' for i in range(self.height) for j in range(self.width) if (i,j) not in content}
+            content = {**content, **new_content}
+        txt = r""
+        # Première ligne
+        txt += "┏"
+        for j in range(self.width-1):
+            txt += "━━━┳"
+        txt += "━━━┓\n"
+        txt += "┃"
+        for j in range(self.width-1):
+            txt += " "+content[(0,j)]+" ┃" if (0,j+1) not in self.neighbors[(0,j)] else " "+content[(0,j)]+"  "
+        txt += " "+content[(0,self.width-1)]+" ┃\n"
+        # Lignes normales
+        for i in range(self.height-1):
+            txt += "┣"
+            for j in range(self.width-1):
+                txt += "━━━╋" if (i+1,j) not in self.neighbors[(i,j)] else "   ╋"
+            txt += "━━━┫\n" if (i+1,self.width-1) not in self.neighbors[(i,self.width-1)] else "   ┫\n"
+            txt += "┃"
+            for j in range(self.width):
+                txt += " "+content[(i+1,j)]+" ┃" if (i+1,j+1) not in self.neighbors[(i+1,j)] else " "+content[(i+1,j)]+"  "
+            txt += "\n"
+        # Bas du tableau
+        txt += "┗"
+        for i in range(self.width-1):
+            txt += "━━━┻"
+        txt += "━━━┛\n"
+        return txt
+    
+
+    def solve_dfs(self, start: tuple, end: tuple):
+        """
+        Permet de résoudre un labyrinthe avec le parcours en profondeur
+        """
+        visite = []
+        pile = [start]
+        predecesseurs = {start: None}
+
+        while pile:
+            cell = pile.pop(0)
+            if cell == end:
+                path = []
+                while cell is not None:
+                    path.append(cell)
+                    cell = predecesseurs[cell]
+                
+                return path[::-1]
+            
+            visite.append(cell)
+            for n in self.neighbors[cell]:
+                if n not in visite:
+                    pile.insert(0, n)
+                    predecesseurs[n] = cell
+        
+        return visite
+
+
+    def solve_bfs(self, start: tuple, end: tuple):
+        """
+        Permet de résoudre un labyrinthe avec le parcours en largeur
+        """
+        visite = []
+        file = [start]
+        predecesseurs = {start: None}
+
+        while file:
+            cell = file.pop(0)
+            if cell == end:
+                path = []
+                while cell is not None:
+                    path.append(cell)
+                    cell = predecesseurs[cell]
+                
+                return path[::-1]
+            
+            visite.append(cell)
+            for n in self.neighbors[cell]:
+                if n not in visite:
+                    file.append(n)
+                    predecesseurs[n] = cell
+        
+        return visite
+    
+
+    def distance_man(self, c1: tuple, c2: tuple):
+        """
+        Retourne le nombre minimal de déplacement pour aller de la cellule c1 à la cellule c2 si il n'y avait pas de mur
+        """
+        return abs(c1[0] - c2[0]) + abs(c1[1] - c2[1])
+
 
     def __str__(self):
         """
