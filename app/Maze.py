@@ -99,6 +99,12 @@ class Maze:
         """
         self.neighbors = {(i, j): set() for i in range(self.width) for j in range(self.height)}
 
+    def empty(self) -> None:
+        """
+        Supprime tous les murs du labyrinthe.
+        """
+        {(i,j): {(y, x) for y in range(i-1, i+2) for x in range(j-1, j+2) if (i, j) != (y, x) and 0 <= y <= self.height-1 and 0 <= x <= self.width-1} for i in range(self.height) for j in range(self.width)}
+
     def get_contiguous_cells(self, cell: tuple) -> list: 
         """
         Récupère l'entièreté des cellules contiguë à une cellule passée en paramètre.
